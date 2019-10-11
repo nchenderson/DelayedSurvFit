@@ -25,7 +25,7 @@ vector of treatment arm assignment
 value of the gamma parameter
 }
 \item{theta.fixed}{
-optional fixed value of theta. Estimated if not provided
+optional fixed value of theta. Estimated if not provided.
 }
 }
 \details{
