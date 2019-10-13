@@ -1,1 +1,4 @@
-export(DelayedSurvFit)
+export(DelayedSurvFit, DelayedHazard)
+importFrom("quadprog", "solve.QP")
+importFrom("survival", "Surv", "survfit")
+S3method("plot","surv.delay")
