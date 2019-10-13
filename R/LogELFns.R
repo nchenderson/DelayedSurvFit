@@ -1,7 +1,7 @@
 
 LogEL <- function(par, nevents0, nevents1, nrisk0, nrisk1, ...) {
-  #eps <- .0001
-  #par <- par + eps
+  #eps <- 0
+  par <- par 
   n0 <- length(nevents0)
   n1 <- length(nevents1)
   w0 <- par[1:n0] 
@@ -12,15 +12,15 @@ LogEL <- function(par, nevents0, nevents1, nrisk0, nrisk1, ...) {
 }
 
 LogELDer <- function(par, nevents0, nevents1, nrisk0, nrisk1, ...) {
-  #eps <- .0001
-  #par <- par + eps
+  #eps <- 0
+  par <- par 
   ans0 <- c(nevents0, nevents1)/par - (c(nrisk0,nrisk1) - c(nevents0,nevents1))/(1 - par)
   return(-ans0)
 }
 
 LogELDer2 <- function(par, nevents0, nevents1, nrisk0, nrisk1) {
-  #eps <- .0001
-  #par <- par + eps
+  #eps <- 0
+  par <- par 
   ans0 <- c(nevents0, nevents1)/(par*par) + (c(nrisk0,nrisk1) - c(nevents0,nevents1))/((1 - par)^2)
   return(ans0)
 }
