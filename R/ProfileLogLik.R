@@ -1,19 +1,34 @@
-ProfileLogLik <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1) {
+ProfileLogLikSQP <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1) {
   
-  Kstar <- max(which(utimes1 < theta))
-  Cmat <- ConstructC(utimes0, utimes1, Kstar)
-  #w0.init <- nevents0/nrisk0
+  a.set <- FindActiveSet(theta=theta, utimes0, utimes1) 
+  nevents0 <- nevents0[a.set$active.set0]
+  nrisk0 <- nrisk0[a.set$active.set0]
+  utimes0 <- utimes0[a.set$active.set0]
+  
+  nevents1 <- nevents1[a.set$active.set1]
+  nrisk1 <- nrisk1[a.set$active.set1]
+  utimes1 <- utimes1[a.set$active.set1]
+  
+  init.find <- FindInitialVectors(theta=theta, utimes0, utimes1) 
+  
+  
+  par.init <- c(init.find$w0, init.find$w1)
+  mm <- max(par.init)
+  while(mm > 1) {
+      par.init <- par.init/2
+      mm <- max(par.init)
+  }
+  
+  Cmat <- ConstructConstrMat(utimes0, utimes1, theta)
   n.pars <- length(utimes0) + length(utimes1)
   
-  eps <- .001
   Dmat <- rbind(Cmat, diag(rep(1, n.pars)), diag(rep(-1, n.pars)))
+  bvec <- c(rep(0, nrow(Cmat)), rep(0, n.pars), rep(-1, n.pars))
+ 
+  
+  ### All the w0 between theta and min(utimes1: utimes1 > theta) should also be zero.
+  
   Amat <- t(Dmat)
-  bvec <- c(rep(eps, nrow(Cmat) + n.pars), rep(-1, n.pars))
-  a <- solve.QP(diag(rep(1, n.pars)), rep(0, n.pars), Amat=Amat, bvec=bvec)
-  par.init <- a$solution 
-  
-  bvec <- c(rep(0, nrow(Cmat) + n.pars), rep(-1, n.pars))
-  
   ## need to ensure that this initial value is feasible.
   niter <- 200
   old.par <- par.init
@@ -38,7 +53,8 @@ ProfileLogLik <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, ut
     new.par <- old.par + alpha*a$solution
     #new.par <- old.par + alpha*a
     loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1)  
-    #print(c(loglik.new, loglik.old))
+    print(summary(a$solution))
+    print(c(loglik.new, loglik.old))
     if(loglik.new < loglik.old) {
       alpha <- 0.5
     } else {
