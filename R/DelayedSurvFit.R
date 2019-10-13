@@ -15,20 +15,21 @@ DelayedSurvFit <- function(times, events, trt, gamma, theta.fixed=NULL) {
   if(is.null(theta.fixed)) {
     theta.interval <- c(min(c(utimes0, utimes1)), .95*max(c(utimes0, utimes1)) )
     ## probably need to give more thought to the best choice for theta.interval
-    opt.gam1 <- optimize(f=ProfileLogLik, interval=theta.interval, nevents0=nevents0, nevents1=nevents1, 
+    opt.gam1 <- optimize(f=ProfileLogLikCO, interval=theta.interval, nevents0=nevents0, nevents1=nevents1, 
                          nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1)
     best.theta <- opt.gam1$minimum
   } else {
     best.theta <- theta.fixed
   }
+  cat("best.theta", best.theta, "\n")
   tmp <- CumHazKnownTheta(best.theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1)
   hazard0 <- tmp$hazard0
   hazard1 <- tmp$hazard1
   surv0 <- cumprod(1 - hazard0)
   surv1 <- cumprod(1 - hazard1)
   ## note that this answer excludes the last jump point
-  ans <- list(times0=utimes0, nevents0=nevents0, nrisk0=nrisk0, times1=utimes1, nevents1=nevents1,
-              nrisk1=nrisk1, hazard0=hazard0, hazard1=hazard1, surv0=surv0, surv1=surv1, theta=best.theta)
+  ans <- list(times0=tmp$utimes0, nevents0=tmp$nevents0, nrisk0=tmp$nrisk0, times1=tmp$utimes1, nevents1=tmp$nevents1,
+              nrisk1=tmp$nrisk1, hazard0=hazard0, hazard1=hazard1, surv0=surv0, surv1=surv1, theta=best.theta)
   class(ans) <- "surv.delay"
   return(ans)
 }
