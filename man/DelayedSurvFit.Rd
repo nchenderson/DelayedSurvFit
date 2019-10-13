@@ -55,7 +55,23 @@ Nicholas Henderson
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-a = 2
+set.seed(5172)
+
+### Generate simulated survival data
+n <- 400
+cens.time <- 8
+X1 <- rweibull(n, shape=2.3, scale=7)
+X2 <- rweibull(n, shape=.8, scale=10)
+Y1 <- pmin(X1, cens.time)
+Y2 <- pmin(X2, cens.time)
+e1 <- as.numeric(X1 < cens.time)
+e2 <- as.numeric(X2 < cens.time)
+
+times <- c(Y1, Y2)  ## follow-up times
+events <- c(e1, e2) ## event indicators
+trt <- rep(c(0,1), each=n)  ## treatment arm assignment
+
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
