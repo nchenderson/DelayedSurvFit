@@ -1,4 +1,6 @@
 DelayedSurvFit <- function(times, events, trt, gamma, theta.fixed=NULL) {
+  
+  ### (1) Extract num.risk and num.events for each treatment arm
   a0 <- survfit(Surv(times[trt==0], events[trt==0]) ~ 1)
   a1 <- survfit(Surv(times[trt==1], events[trt==1]) ~ 1)
   
@@ -12,16 +14,28 @@ DelayedSurvFit <- function(times, events, trt, gamma, theta.fixed=NULL) {
   nevents1 <- a1$n.event[-tau1]
   nrisk1 <- a1$n.risk[-tau1]
   
+  ## (2) Construct Nelson-Aalen estimates for each treatment arm
+  h0 <- nevents0/nrisk0
+  h1 <- nevents1/nrisk1
+  H0 <- stepfun(utimes0, cumsum(c(0,h0)), right=FALSE)
+  H1 <- stepfun(utimes1, cumsum(c(0,h1)), right=FALSE)
+  h0.max <- max(utimes0)
+  h1.max <- max(utimes1)
+  
+  ## (3) Find optimal theta (if theta is not specified)
   if(is.null(theta.fixed)) {
     theta.interval <- c(min(c(utimes0, utimes1)), .95*max(c(utimes0, utimes1)) )
     ## probably need to give more thought to the best choice for theta.interval
-    opt.gam1 <- optimize(f=ProfileLogLikCO, interval=theta.interval, nevents0=nevents0, nevents1=nevents1, 
-                         nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1)
+    opt.gam1 <- optimize(f=ProfileLogLikSQP, interval=theta.interval, nevents0=nevents0, nevents1=nevents1, 
+                         nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1,
+                         H0=H0, H1=H1)
     best.theta <- opt.gam1$minimum
   } else {
     best.theta <- theta.fixed
   }
   cat("best.theta", best.theta, "\n")
+  
+  ## (4) 
   tmp <- CumHazKnownTheta(best.theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1)
   hazard0 <- tmp$hazard0
   hazard1 <- tmp$hazard1
