@@ -14,7 +14,7 @@ ProfileLogLikCO <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, 
   
   par.init <- c(init.find$w0, init.find$w1)
   mm <- max(par.init)
-  while(mm > 1) {
+  while(mm >= 1) {
     par.init <- par.init/2
     mm <- max(par.init)
   }
@@ -24,7 +24,8 @@ ProfileLogLikCO <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, 
   
   Dmat <- rbind(Cmat, diag(rep(1, n.pars)), diag(rep(-1, n.pars)))
   bvec <- c(rep(0, nrow(Cmat)), rep(0, n.pars), rep(-1, n.pars))
-  
+  tmp2 <- as.vector(Dmat%*%par.init - bvec)
+  print(summary(tmp2))
   
   ### All the w0 between theta and min(utimes1: utimes1 > theta) should also be zero.
   
