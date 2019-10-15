@@ -1,4 +1,4 @@
-export(DelayedSurvFit, DelayedHazard)
+export(DelayedSurvFit, DelayedHazard, ProfileLogLikCO, LogEL, ProfileLogLikSQP, FindActiveSet, CumHazKnownTheta)
 importFrom("quadprog", "solve.QP")
 importFrom("survival", "Surv", "survfit")
 S3method("plot","surv.delay")
