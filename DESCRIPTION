@@ -1,8 +1,8 @@
 Package: DelayedSurvFit
 Type: Package
 Title: Survival Estimation with Delayed Treatment Constraints
-Version: 0.1.1
-Date: 2019-10-14
+Version: 0.1.2
+Date: 2019-10-15
 Authors@R: c(person("Nicholas", "Henderson", email = "nchender@umich.edu", role = c("cre", "aut")))
 Maintainer: Nicholas Henderson <nchender@umich.edu>
 Imports: stats, utils, survival, quadprog
