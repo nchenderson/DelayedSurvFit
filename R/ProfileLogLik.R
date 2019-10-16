@@ -1,9 +1,9 @@
-ProfileLogLikSQP <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
+ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
                              H0, H1) {
   utimes0.orig <- utimes0
   utimes1.orig <- utimes1
   
-  a.set <- FindActiveSet(theta=theta, utimes0, utimes1) 
+  a.set <- FindActiveSet(theta=theta, gamma, utimes0, utimes1) 
   nevents0 <- nevents0[a.set$active.set0]
   nrisk0 <- nrisk0[a.set$active.set0]
   utimes0 <- utimes0[a.set$active.set0]
@@ -12,17 +12,17 @@ ProfileLogLikSQP <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0,
   nrisk1 <- nrisk1[a.set$active.set1]
   utimes1 <- utimes1[a.set$active.set1]
   
-  
   na.w0 <- diff(H0(c(0, utimes0)))
   na.w1 <- diff(H1(c(0, utimes1)))
   d.target <- c(na.w0, na.w1)
   
-  Cmat <- ConstructConstrMat(utimes0, utimes1, theta)
+  Cmat <- ConstructConstrMat(utimes0, utimes1, theta, gamma)
   n.pars <- length(utimes0) + length(utimes1)
   
   Dmat <- rbind(Cmat, diag(rep(1, n.pars)), diag(rep(-1, n.pars)))
   bvec <- c(rep(0, nrow(Cmat)), rep(0, n.pars), rep(-1, n.pars))
   Amat <- t(Dmat)
+  
   a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
   par.init <- a$solution
   par.init <- par.init + 1e-12 ## sometimes solve.QP returns very small negative numbers (e.g., -1e-19)
@@ -35,7 +35,7 @@ ProfileLogLikSQP <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0,
   resid.sq <- 1
   k <- 1
   loglik.old <- LogEL(par.init, nevents0, nevents1, nrisk0, nrisk1) 
-  print(loglik.old)
+  #print(loglik.old)
   alpha <- 0.5
   ## Use SQP for finding optimal solution.
   while(resid.sq > 1e-6 & k <= niter) {
@@ -46,11 +46,8 @@ ProfileLogLikSQP <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0,
     # Is this the right quadratic approximation here?
     
     a <- solve.QP(Dmat, dvec, Amat, bvec)
-    
-    #a <- MyQP(dd, qvec=-dvec, Amat=-t(Amat), bvec=bvec)
-    
+
     new.par <- old.par + alpha*a$solution
-    #new.par <- old.par + alpha*a
     loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1)  
     print(c(loglik.new, loglik.old))
     if(loglik.new < loglik.old) {
