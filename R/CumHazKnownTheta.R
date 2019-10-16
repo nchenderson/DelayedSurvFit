@@ -1,15 +1,6 @@
-CumHazKnownTheta <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1) {
+CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1) {
   
-  #h0 <- nevents0/nrisk0
-  #h1 <- nevents1/nrisk1
-  #H0 <- stepfun(utimes0, cumsum(c(0,h0)), right=FALSE)
-  #H1 <- stepfun(utimes1, cumsum(c(0,h1)), right=FALSE)
-  #h0.max <- max(utimes0)
-  #h1.max <- max(utimes1)
-  #utimes0.orig <- utimes0
-  #utimes1.orig <- utimes1
-  
-  a.set <- FindActiveSet(theta=theta, utimes0, utimes1) 
+  a.set <- FindActiveSet(theta=theta, gamma=gamma, utimes0, utimes1) 
   nevents0 <- nevents0[a.set$active.set0]
   nrisk0 <- nrisk0[a.set$active.set0]
   utimes0 <- utimes0[a.set$active.set0]
@@ -31,7 +22,7 @@ CumHazKnownTheta <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0,
   #  mm <- max(par.init)
   #}
   
-  Cmat <- ConstructConstrMat(utimes0, utimes1, theta)
+  Cmat <- ConstructConstrMat(utimes0, utimes1, theta, gamma)
   n.pars <- length(utimes0) + length(utimes1)
   
   Dmat <- rbind(Cmat, diag(rep(1, n.pars)), diag(rep(-1, n.pars)))
@@ -58,10 +49,7 @@ CumHazKnownTheta <- function(theta, nevents0, nevents1, nrisk0, nrisk1, utimes0,
     
     a <- solve.QP(Dmat, dvec, Amat, bvec)
     
-    #a <- MyQP(dd, qvec=-dvec, Amat=-t(Amat), bvec=bvec)
-    
     new.par <- old.par + alpha*a$solution
-    #new.par <- old.par + alpha*a
     loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1)  
     print(c(loglik.new, loglik.old))
     if(loglik.new < loglik.old) {
