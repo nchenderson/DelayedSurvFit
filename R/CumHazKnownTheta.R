@@ -1,4 +1,5 @@
-CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1) {
+CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
+                             H0, H1) {
   
   a.set <- FindActiveSet(theta=theta, gamma=gamma, utimes0, utimes1) 
   nevents0 <- nevents0[a.set$active.set0]
@@ -13,7 +14,7 @@ CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   na.w1 <- diff(H1(c(0, utimes1)))
   d.target <- c(na.w0, na.w1)
   
-  init.find <- FindInitialVectors(theta=theta, utimes0, utimes1) 
+  #init.find <- FindInitialVectors(theta=theta, utimes0, utimes1) 
   
   #par.init <- c(init.find$w0, init.find$w1)
   #mm <- max(par.init)
@@ -40,7 +41,7 @@ CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   loglik.old <- LogEL(par.init, nevents0, nevents1, nrisk0, nrisk1)  
   alpha <- 0.5
   ## Use SQP for finding optimal solution.
-  while(resid.sq > 1e-6 & k <= niter) {
+  while(resid.sq > 1e-8 & k <= niter) {
     dd <- LogELDer2(old.par, nevents0, nevents1, nrisk0, nrisk1) 
     R <- LogELDer(old.par, nevents0, nevents1, nrisk0, nrisk1)
     dvec <- (-1)*R
@@ -51,7 +52,7 @@ CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
     
     new.par <- old.par + alpha*a$solution
     loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1)  
-    print(c(loglik.new, loglik.old))
+    #print(c(loglik.new, loglik.old))
     if(loglik.new < loglik.old) {
       alpha <- 0.5
     } else {
