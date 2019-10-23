@@ -49,7 +49,7 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
 
     new.par <- old.par + alpha*a$solution
     loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1)  
-    print(c(loglik.new, loglik.old))
+    #print(c(loglik.new, loglik.old))
     if(loglik.new < loglik.old) {
       alpha <- 0.5
     } else {
@@ -80,6 +80,5 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   I1 <- sum(diff(utimes1.orig)*ff1)
   
   DistNA <- I0 + I1
-  #ans <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1) 
   return(DistNA)
 }
