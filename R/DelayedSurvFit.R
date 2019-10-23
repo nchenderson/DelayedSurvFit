@@ -61,11 +61,12 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL) {
       best.theta <- theta.fixed
       best.gamma <- gamma
   }
-  cat("best.theta", best.theta, "\n")
+  #cat("best.theta", best.theta, "\n")
   
   ## (4) 
   ## Change this function so that it can take a fixed value of gamma as well.
-  tmp <- CumHazKnownTheta(best.theta, gamma=best.gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1)
+  tmp <- CumHazKnownTheta(best.theta, gamma=best.gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
+                          H0=H0, H1=H1)
   hazard0 <- tmp$hazard0
   hazard1 <- tmp$hazard1
   surv0 <- cumprod(1 - hazard0)
