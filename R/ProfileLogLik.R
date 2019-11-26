@@ -1,5 +1,8 @@
 ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
                              H0, H1) {
+  
+  ################################################################
+  ## (1) Compute active set and constraint matrix
   utimes0.orig <- utimes0
   utimes1.orig <- utimes1
   
@@ -19,25 +22,32 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   Cmat <- ConstructConstrMat(utimes0, utimes1, theta, gamma)
   n.pars <- length(utimes0) + length(utimes1)
   
+  ################################################################
+  ## (2) Perform parameter initialization
+  ##       The constraints are Cw >= 0, w >= 0, w < 1
   Dmat <- rbind(Cmat, diag(rep(1, n.pars)), diag(rep(-1, n.pars)))
   bvec <- c(rep(0, nrow(Cmat)), rep(0, n.pars), rep(-1, n.pars))
   Amat <- t(Dmat)
   
-  a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
-  par.init <- a$solution
-  par.init <- par.init + 1e-12 ## sometimes solve.QP returns very small negative numbers (e.g., -1e-19)
-    ### All the w0 between theta and min(utimes1: utimes1 > theta) should also be zero.
-  
-  ## need to ensure that this initial value is feasible.
+  #a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
+  PP <- sparseMatrix(i=1:n.pars, j=1:n.pars, x=rep(1, n.pars), dims=c(n.pars,n.pars))
+  a <- solve_osqp(P = PP, q = -d.target, A = t(Amat), l = bvec, u = NULL, 
+                  pars=osqpSettings(verbose=FALSE,eps_prim_inf = 1e-10))
+  par.init <- a$x
+  tau0 <- length(nevents0)
+  tau1 <- length(nevents1)
+  par.init[par.init < 0] <- 1e-12  ## sometimes solve.QP returns very small negative numbers (e.g., -1e-19)
+
   niter <- 200
   old.par <- par.init
   Dmat <- diag(old.par)
   resid.sq <- 1
   k <- 1
   loglik.old <- LogEL(par.init, nevents0, nevents1, nrisk0, nrisk1) 
-  #print(loglik.old)
   alpha <- 0.5
   ## Use SQP for finding optimal solution.
+  npars <- length(par.init)
+  Dmat <- sparseMatrix(i=1:npars, j=1:npars, x=d.target, dims=c(npars,npars))
   while(resid.sq > 1e-6 & k <= niter) {
     dd <- LogELDer2(old.par, nevents0, nevents1, nrisk0, nrisk1) 
     R <- LogELDer(old.par, nevents0, nevents1, nrisk0, nrisk1)
@@ -45,16 +55,27 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
     diag(Dmat) <- dd
     # Is this the right quadratic approximation here?
     
-    a <- solve.QP(Dmat, dvec, Amat, bvec)
+    #a <- try(solve.QP(Dmat, dvec, Amat, bvec))
+    a <- solve_osqp(P = Dmat, q = -dvec, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
+    if(class(a)=="try-error") {
+        a.tmp <- solve_osqp(P = Dmat, q = -dvec, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
+        qp.solution <- a.tmp$x 
+    } else {
+        #qp.solution <- a$solution
+        qp.solution <- a$x
+    }
 
-    new.par <- old.par + alpha*a$solution
+    new.par <- rep(-1, length(qp.solution))
+    while(sum(new.par < -1e-12) > 0 | sum(new.par > 1) > 0) {
+       new.par <- pmin(old.par + alpha*qp.solution, 1)
+       alpha <- alpha/2
+    }
     loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1)  
-    #print(c(loglik.new, loglik.old))
     if(loglik.new < loglik.old) {
       alpha <- 0.5
     } else {
       alpha <- alpha/2
-      new.par <- old.par + alpha*a$solution
+      new.par <- pmin(old.par + alpha*qp.solution, 1)
       print('reject')
       ## add better safeguards here later!
     }
@@ -67,7 +88,7 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   tau1 <- length(nevents1)
   hazard0 <- new.par[1:tau0]
   hazard1 <- new.par[(tau0 + 1):(tau0 + tau1)]
-  
+
   cum.H0 <- stepfun(utimes0, cumsum(c(0,hazard0)), right=FALSE)
   cum.H1 <- stepfun(utimes1, cumsum(c(0,hazard1)), right=FALSE)
   
