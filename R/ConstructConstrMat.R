@@ -4,12 +4,20 @@ ConstructConstrMat <- function(times0, times1, theta, gamma) {
   #   This is the constraint matrix under the assumption that
   #   the control arm initially "dominates" the active treatment arms 
   
+  ## Assume that 0 <= \theta <= max event time
   times.tot <- sort(c(times0, times1))
   
   tau <- length(times.tot)
   A <- matrix(0, nrow=tau, ncol=length(times0))
   B <- matrix(0, nrow=tau, ncol=length(times1))
-  Kstar <- max(which(times.tot < theta))
+  if(min(times.tot) >= theta) {
+     ## all times are greater than theta
+     Kstar <- 0
+  } else {
+     ## 
+     Kstar <- max(which(times.tot < theta))
+  }
+  #Kstar <- ifelse(min(times.tot) > theta, 0, max(which(times.tot < theta)))
   
   if(gamma==1) {
      for(j in 1:tau) {
