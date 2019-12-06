@@ -22,12 +22,34 @@ CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   Dmat <- rbind(Cmat, diag(rep(1, n.pars)), diag(rep(-1, n.pars)))
   bvec <- c(rep(0, nrow(Cmat)), rep(0, n.pars), rep(-1, n.pars))
   Amat <- t(Dmat)
-  #a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
-  #par.init <- a$solution + 1e-12
+ 
   a <- solve_osqp(P = diag(rep(1, n.pars)), q = -d.target, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
-  par.init <- a$x
+  par.init1 <- a$x
+  par.init1[par.init1 < 0] <- 1e-12
+  a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
+  if(class(a)!='try-error') {
+    par.init0 <- a$solution
+    par.init0[par.init0 < 0] <- 1e-12
+  } else {
+    par.init0 <- par.init1
+  }
+  loglik0 <- LogEL(par.init0, nevents0, nevents1, nrisk0, nrisk1) 
+  loglik1 <- LogEL(par.init1, nevents0, nevents1, nrisk0, nrisk1)
+  if(!is.na(loglik1) & !is.na(loglik0)) {
+    if(loglik1 < loglik0) {
+      par.init <- par.init1
+    } else {
+      par.init <- par.init0
+    }
+  } else {
+      par.init <- par.init0
+  }
   #par.init <- pmax(par.init + 1e-12, 1e-12)
   par.init[par.init < 0] <- 1e-12
+  
+  
+  print(c(loglik0, loglik1))
+  print("hello")
   
   ### All the w0 between theta and min(utimes1: utimes1 > theta) should also be zero.
   niter <- 200
@@ -40,14 +62,13 @@ CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   ## Use SQP for finding optimal solution.
   npars <- length(par.init)
   Dmat <- sparseMatrix(i=1:npars, j=1:npars, x=d.target, dims=c(npars,npars))
-  while(resid.sq > 1e-8 & k <= niter) {
+  while(resid.sq > 1e-10 & k <= niter) {
     dd <- LogELDer2(old.par, nevents0, nevents1, nrisk0, nrisk1) 
     R <- LogELDer(old.par, nevents0, nevents1, nrisk0, nrisk1)
     dvec <- (-1)*R
     diag(Dmat) <- dd
-    # Is this the right quadratic approximation here?
     
-    #a <- solve.QP(Dmat, dvec, Amat, bvec)
+   # a <- solve.QP(Dmat, dvec, Amat, bvec)
     a <- solve_osqp(P = Dmat, q = -dvec, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
     if(class(a)=="try-error") {
       a.tmp <- solve_osqp(P = Dmat, q = -dvec, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
@@ -63,13 +84,12 @@ CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
       alpha <- alpha/2
     }
     loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1)  
-    #print(c(loglik.new, loglik.old))
-    if(loglik.new < loglik.old) {
-      alpha <- 0.5
-    } else {
-      alpha <- alpha/2
+    print(c(loglik.new, loglik.old))
+    alpha <- 0.5
+    while(loglik.new >= loglik.old + .0001) {
       new.par <- pmin(old.par + alpha*qp.solution, 1)
-      print('reject')
+      loglik.new <- LogEL(new.par, nevents0, nevents1, nrisk0, nrisk1) 
+      alpha <- alpha/2
       ## add better safeguards here later!
     }
     resid.sq <- sum((new.par - old.par)*(new.par - old.par))
