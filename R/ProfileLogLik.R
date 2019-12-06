@@ -31,13 +31,34 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   
   #a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
   PP <- sparseMatrix(i=1:n.pars, j=1:n.pars, x=rep(1, n.pars), dims=c(n.pars,n.pars))
+  
   a <- solve_osqp(P = PP, q = -d.target, A = t(Amat), l = bvec, u = NULL, 
                   pars=osqpSettings(verbose=FALSE,eps_prim_inf = 1e-10))
-  par.init <- a$x
+  par.init1 <- a$x
+  par.init1[par.init1 < 0] <- 1e-12
+  a <- try(solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec))
+  if(class(a)!='try-error') {
+    par.init0 <- a$solution
+    par.init0[par.init0 < 0] <- 1e-12
+  } else {
+    par.init0 <- par.init1
+  }
+  loglik0 <- LogEL(par.init0, nevents0, nevents1, nrisk0, nrisk1) 
+  loglik1 <- LogEL(par.init1, nevents0, nevents1, nrisk0, nrisk1)
+  if(!is.na(loglik1) & !is.na(loglik0)) {
+     if(loglik1 < loglik0) {
+        par.init <- par.init1
+     } else {
+        par.init <- par.init0
+     }
+  } else {
+      par.init <- par.init0
+  }
+  #par.init <- pmax(par.init + 1e-12, 1e-12)
+  par.init[par.init < 0] <- 1e-12
+  
   tau0 <- length(nevents0)
   tau1 <- length(nevents1)
-  par.init[par.init < 0] <- 1e-12  ## sometimes solve.QP returns very small negative numbers (e.g., -1e-19)
-
   niter <- 200
   old.par <- par.init
   Dmat <- diag(old.par)
