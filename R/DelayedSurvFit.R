@@ -78,14 +78,17 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL) {
       best.gamma <- gamma
       best.theta <- theta.star
   } else if(!is.null(theta.fixed) & is.null(gamma)) {
+      theta.possible <- NULL
       obj1 <- ProfileLogLikSQP(theta=theta.fixed, gamma = 1, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1, H0, H1) 
       objneg1 <- ProfileLogLikSQP(theta=theta.fixed, gamma = -1, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1, H0, H1) 
       
       best.gamma <- ifelse(obj1 < objneg1, 1, -1)
       best.theta <- theta.fixed
   } else if(!is.null(theta.fixed) & !is.null(gamma)) {
+      theta.possible <- NULL
       best.theta <- theta.fixed
       best.gamma <- gamma
+      objfn.check1 <- NULL
   }
   #cat("best.theta", best.theta, "\n")
   
@@ -93,7 +96,10 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL) {
   ## Change this function so that it can take a fixed value of gamma as well.
   tmp <- CumHazKnownTheta(best.theta, gamma=best.gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
                           H0=H0, H1=H1)
-  
+
+  if(is.null(objfn.check1)) {
+     objfn.check1 <- objfn.checkneg1 <- tmp$DistNA
+  }  
   hazard0 <- tmp$hazard0
   hazard1 <- tmp$hazard1
   surv0 <- cumprod(1 - hazard0)
