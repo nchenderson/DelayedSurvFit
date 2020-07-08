@@ -1,10 +1,10 @@
 rrml <- function(obj, t0, t1, tau0=NULL, tau1=NULL)
 {
   if(is.null(tau0)) {
-    tau0 <- max(obj$times0)
+    tau0 <- max(obj$times)
   }
   if(is.null(tau1)) {
-    tau1 <- max(obj$times1)
+    tau1 <- max(obj$times)
   }
   ss1 <- SurvFn(obj, arm=1)
   ss0 <- SurvFn(obj, arm=0)

@@ -1,63 +1,41 @@
-CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
+CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes,
                              H0, H1) {
   utimes0.orig <- utimes0
   utimes1.orig <- utimes1
   
-  a.set <- FindActiveSet(theta=theta, gamma=gamma, utimes0, utimes1) 
-  nevents0 <- nevents0[a.set$active.set0]
-  nrisk0 <- nrisk0[a.set$active.set0]
-  utimes0 <- utimes0[a.set$active.set0]
-  
-  nevents1 <- nevents1[a.set$active.set1]
-  nrisk1 <- nrisk1[a.set$active.set1]
-  utimes1 <- utimes1[a.set$active.set1]
   
   na.w0 <- diff(H0(c(0, utimes0)))
   na.w1 <- diff(H1(c(0, utimes1)))
   d.target <- c(na.w0, na.w1)
   
-  Cmat <- ConstructConstrMat(utimes0, utimes1, theta, gamma)
-  n.pars <- length(utimes0) + length(utimes1)
+  Cmat <- ConstructConstrMat(utimes, theta, gamma)
+  n.pars <- length(utimes)
   
-  Dmat <- rbind(Cmat, diag(rep(1, n.pars)), diag(rep(-1, n.pars)))
+  Amat <- rbind(Cmat, diag(rep(1, n.pars)))
   bvec <- c(rep(0, nrow(Cmat)), rep(0, n.pars), rep(-1, n.pars))
-  Amat <- t(Dmat)
+  #Amat <- t(Dmat)
  
-  a <- solve_osqp(P = diag(rep(1, n.pars)), q = -d.target, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
+  a <- solve_osqp(P = diag(rep(1, n.pars)), q = -d.target, A = Amat, l=NULL, u = rep(0, nrow(Dmat)), 
+                  pars=osqpSettings(verbose=FALSE))
   par.init1 <- a$x
-  par.init1[par.init1 < 0] <- 1e-12
-  a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
-  if(class(a)!='try-error') {
-    par.init0 <- a$solution
-    par.init0[par.init0 < 0] <- 1e-12
-  } else {
-    par.init0 <- par.init1
-  }
-  loglik0 <- LogEL(par.init0, nevents0, nevents1, nrisk0, nrisk1) 
-  loglik1 <- LogEL(par.init1, nevents0, nevents1, nrisk0, nrisk1)
-  if(!is.na(loglik1) & !is.na(loglik0)) {
-    if(loglik1 < loglik0) {
-      par.init <- par.init1
-    } else {
-      par.init <- par.init0
-    }
-  } else {
-      par.init <- par.init0
-  }
-  #par.init <- pmax(par.init + 1e-12, 1e-12)
-  par.init[par.init < 0] <- 1e-12
-  
-  
-  print(c(loglik0, loglik1))
-  print("hello")
-  
+  par.init1[par.init1 > 0] <- -1e-12
+  #a <- solve.QP(diag(rep(1, n.pars)), dvec=d.target, Amat=Amat, bvec=bvec)
+  #if(class(a)!='try-error') {
+  #  par.init0 <- a$solution
+  #  par.init0[par.init0 < 0] <- 1e-12
+  #} else {
+  #  par.init0 <- par.init1
+  #}
+
+  loglik.val <- LogLik(par.init, nevents0, nevents1, nrisk0, nrisk1) 
+
   ### All the w0 between theta and min(utimes1: utimes1 > theta) should also be zero.
   niter <- 200
   old.par <- par.init
   Dmat <- diag(old.par)
   resid.sq <- 1
   k <- 1
-  loglik.old <- LogEL(par.init, nevents0, nevents1, nrisk0, nrisk1)  
+  loglik.old <- LogLik(par.init, nevents0, nevents1, nrisk0, nrisk1)  
   alpha <- 0.5
   ## Use SQP for finding optimal solution.
   npars <- length(par.init)
@@ -68,13 +46,11 @@ CumHazKnownTheta <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
     dvec <- (-1)*R
     diag(Dmat) <- dd
     
-   # a <- solve.QP(Dmat, dvec, Amat, bvec)
     a <- solve_osqp(P = Dmat, q = -dvec, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
     if(class(a)=="try-error") {
       a.tmp <- solve_osqp(P = Dmat, q = -dvec, A = t(Amat), l = bvec, u = NULL, pars=osqpSettings(verbose=FALSE))
       qp.solution <- a.tmp$x 
     } else {
-      #qp.solution <- a$solution
       qp.solution <- a$x
     }
     

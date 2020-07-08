@@ -5,7 +5,7 @@ Version: 0.1.2
 Date: 2019-10-15
 Authors@R: c(person("Nicholas", "Henderson", email = "nchender@umich.edu", role = c("cre", "aut")))
 Maintainer: Nicholas Henderson <nchender@umich.edu>
-Imports: stats, utils, survival, quadprog
+Imports: stats, utils, survival, quadprog, Dykstra
 Description: Tools for nonparametric survival analysis when two survival curves are restricted to have one of several survival profiles.
 License: GPL-2
 Encoding: UTF-8

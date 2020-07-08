@@ -1,26 +1,29 @@
-ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
+ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, times.tot,
                              H0, H1) {
   
   ################################################################
   ## (1) Compute active set and constraint matrix
-  utimes0.orig <- utimes0
-  utimes1.orig <- utimes1
+  #utimes0.orig <- utimes0
+  #utimes1.orig <- utimes1
+  times.tot <- sort(c(utimes0, utimes1))
   
-  a.set <- FindActiveSet(theta=theta, gamma, utimes0, utimes1) 
-  nevents0 <- nevents0[a.set$active.set0]
-  nrisk0 <- nrisk0[a.set$active.set0]
-  utimes0 <- utimes0[a.set$active.set0]
   
-  nevents1 <- nevents1[a.set$active.set1]
-  nrisk1 <- nrisk1[a.set$active.set1]
-  utimes1 <- utimes1[a.set$active.set1]
+  ## Need to change all of this.
+  #a.set <- FindActiveSet(theta=theta, gamma, utimes0, utimes1) 
+  #nevents0 <- nevents0[a.set$active.set0]
+  #nrisk0 <- nrisk0[a.set$active.set0]
+  #utimes0 <- utimes0[a.set$active.set0]
   
-  na.w0 <- diff(H0(c(0, utimes0)))
-  na.w1 <- diff(H1(c(0, utimes1)))
+  #nevents1 <- nevents1[a.set$active.set1]
+  #nrisk1 <- nrisk1[a.set$active.set1]
+  #utimes1 <- utimes1[a.set$active.set1]
+  
+  na.w0 <- diff(H0(c(0, times.tot)))
+  na.w1 <- diff(H1(c(0, times.tot)))
   d.target <- c(na.w0, na.w1)
   
   Cmat <- ConstructConstrMat(utimes0, utimes1, theta, gamma)
-  n.pars <- length(utimes0) + length(utimes1)
+  n.pars <- 2*length(times.tot)
   
   ################################################################
   ## (2) Perform parameter initialization
@@ -57,8 +60,8 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
   #par.init <- pmax(par.init + 1e-12, 1e-12)
   par.init[par.init < 0] <- 1e-12
   
-  tau0 <- length(nevents0)
-  tau1 <- length(nevents1)
+  #tau0 <- length(nevents0)
+  #tau1 <- length(nevents1)
   niter <- 200
   old.par <- par.init
   Dmat <- diag(old.par)
@@ -105,13 +108,11 @@ ProfileLogLikSQP <- function(theta, gamma, nevents0, nevents1, nrisk0, nrisk1, u
     loglik.old <- loglik.new
     k <- k+1
   }
-  tau0 <- length(nevents0)
-  tau1 <- length(nevents1)
-  hazard0 <- new.par[1:tau0]
-  hazard1 <- new.par[(tau0 + 1):(tau0 + tau1)]
+  hazard0 <- new.par[1:tau]
+  hazard1 <- new.par[(tau + 1):(2*tau0 )]
 
-  cum.H0 <- stepfun(utimes0, cumsum(c(0,hazard0)), right=FALSE)
-  cum.H1 <- stepfun(utimes1, cumsum(c(0,hazard1)), right=FALSE)
+  cum.H0 <- stepfun(times.tot, cumsum(c(0,hazard0)), right=FALSE)
+  cum.H1 <- stepfun(times.tot, cumsum(c(0,hazard1)), right=FALSE)
   
   tt0 <- length(utimes0.orig)
   tt1 <- length(utimes1.orig)

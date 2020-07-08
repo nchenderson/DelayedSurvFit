@@ -71,6 +71,15 @@ times <- c(Y1, Y2)  ## follow-up times
 events <- c(e1, e2) ## event indicators
 trt <- rep(c(0,1), each=n)  ## treatment arm assignment
 
+dsf.obj <- DelayedSurvFit(times, events, trt, gamma=-1, theta.fixed=5.8, max.times=100) 
+
+km0 <- cumprod(1 - dsf.obj$nevents0/dsf.obj$nrisk0)
+km1 <- cumprod(1 - dsf.obj$nevents1/dsf.obj$nrisk1)
+
+plot(dsf.obj)
+lines(dsf.obj$times, km0, type="s", lty=2)
+lines(dsf.obj$times, km1, type="s", lty=2, col="red")
+
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

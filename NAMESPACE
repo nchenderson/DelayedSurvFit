@@ -1,5 +1,6 @@
 export(DelayedSurvFit, DelayedHazard, ProfileLogLikCO, LogEL, ProfileLogLikSQP, FindActiveSet, CumHazKnownTheta, ConstructConstrMat,
-       rmst, SurvFn, rrml)
+       rmst, SurvFn, rrml, SurvFnKnownTheta)
 importFrom("quadprog", "solve.QP")
 importFrom("survival", "Surv", "survfit")
+importFrom("Dykstra", "dykstra")
 S3method("plot","surv.delay")

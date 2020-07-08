@@ -1,86 +1,109 @@
-DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL) {
+DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100) {
   
-  ### (1) Extract num.risk and num.events for each treatment arm
-  a0 <- survfit(Surv(times[trt==0], events[trt==0]) ~ 1)
-  a1 <- survfit(Surv(times[trt==1], events[trt==1]) ~ 1)
+  num.unique <- length(unique(times))
+  if(num.unique > max.times) {
+    
+      chc <- hclust(dist(times))
+      memb <- cutree(chc, k=max.times)
+      new.times <- rep(0, length(times))
+      for(k in 1:100) {
+         new.times[memb==k] <- median(times[memb==k])
+      }
+  } else {
+      new.times <- times
+  }
+  sfit <- survfit(Surv(new.times, events) ~ trt)
+
+  utimes <- unique(sort(new.times))
+  risk.data <- data.frame(strata = summary(sfit, times = utimes, extend = TRUE)$strata, 
+                          time = summary(sfit, times = utimes, extend = TRUE)$time, 
+                          n.risk = summary(sfit, times = utimes, extend = TRUE)$n.risk,
+                          n.event = summary(sfit, times = utimes, extend = TRUE)$n.event,
+                          surv = summary(sfit, times=utimes, extend=TRUE)$surv)
   
-  ## look at only event times, 
-  ## However, numerically there may be some benefit in keeping 
-  ## the censoring times (think about it) 
-  tau0 <- length(a0$time)
-  tau1 <- length(a1$time)
-  idx.event0 <- a0$n.event > 0
-  idx.event1 <- a1$n.event > 0
-  utimes0 <- a0$time[idx.event0]
-  nevents0 <- a0$n.event[idx.event0]
-  nrisk0 <- a0$n.risk[idx.event0]
+  n1 <- risk.data$n.risk[risk.data$strata=="trt=1"]
+  d1 <- risk.data$n.event[risk.data$strata=="trt=1"]
+  S1 <- risk.data$surv[risk.data$strata=="trt=1"]
+  n0 <- risk.data$n.risk[risk.data$strata=="trt=0"]
+  d0 <- risk.data$n.event[risk.data$strata=="trt=0"]
+  S0 <- risk.data$surv[risk.data$strata=="trt=0"]
   
-  utimes1 <- a1$time[idx.event1]
-  nevents1 <- a1$n.event[idx.event1]
-  nrisk1 <- a1$n.risk[idx.event1]
+  #max.index <- min(max(n0 > 0), max(n1 > 0))
+  num.zeros0 <- sum(n0 - d0 == 0) 
+  num.zeros1 <- sum(n1 - d1 == 0)
+  if(num.zeros0 > 0 | num.zeros1 > 0) {
+      if(num.zeros0 > 0 & num.zeros1 == 0) {
+          cut.index <- min(which(n0 - d0 == 0))
+      } else if(num.zeros0 == 0 & num.zeros1 > 0) {
+          cut.index <- min(which(n1 - d1 == 0))
+      } else if(num.zeros0 == 0 & num.zeros1 == 0) {
+          cut.index <- min(min(which(n0 - d0==0)), min(which(n1 - d1==0)))
+      }
+      remove.indices <- cut.index:length(utimes)
+      n1 <- n1[-remove.indices]
+      d1 <- d1[-remove.indices]
+      S1 <- S1[-remove.indices]
+      
+      n0 <- n0[-remove.indices]
+      d0 <- d0[-remove.indices]
+      S0 <- S0[-remove.indices]
+      utimes <- utimes[-remove.indices]
+  }
   
-  ## (2) Construct Nelson-Aalen estimates for each treatment arm
-  h0 <- nevents0/nrisk0
-  h1 <- nevents1/nrisk1
-  H0 <- stepfun(utimes0, cumsum(c(0,h0)), right=FALSE)
-  H1 <- stepfun(utimes1, cumsum(c(0,h1)), right=FALSE)
-  h0.max <- max(utimes0)
-  h1.max <- max(utimes1)
+  n.pars <- 2*length(utimes)
+  par.target <- c(log(n0 - d0) - log(n0), log(n1 - d1) - log(n1))
+  
+  ## need to clean data further here.
   
   ## (3) Find optimal theta (if theta is not specified)
   if(is.null(theta.fixed) & is.null(gamma)) {
-    theta.interval <- c(min(c(utimes0, utimes1)), .95*max(c(utimes0, utimes1)) )
-    ## probably need to give more thought to the best choice for theta.interval
-    #opt.gam1 <- optimize(f=ProfileLogLikSQP, interval=theta.interval, gamma=1, nevents0=nevents0, nevents1=nevents1, 
-    #                     nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1,
-    #                     H0=H0, H1=H1)
-    #opt.gamneg1 <- optimize(f=ProfileLogLikSQP, interval=theta.interval, gamma=-1, nevents0=nevents0, nevents1=nevents1, 
-    #                     nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1,
-    #                     H0=H0, H1=H1)
-    theta.min <- min(c(utimes0, utimes1))/2
-    theta.possible <- sort(c(theta.min, utimes0[-length(utimes0)], utimes1[-length(utimes1)]))
-
-    if(length(theta.possible) > 200) {
-        theta.possible <- seq(min(theta.possible), max(theta.possible), length.out=200)
-    }
-    nn <- length(theta.possible)
-    objfn.check1 <- objfn.checkneg1 <- rep(0, nn)
-     for(k in 1:nn) {
-          objfn.check1[k] <- ProfileLogLikSQP(theta=theta.possible[k], gamma=1, nevents0=nevents0, nevents1=nevents1, 
-                                             nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1,H0=H0, H1=H1)
-          objfn.checkneg1[k] <- ProfileLogLikSQP(theta=theta.possible[k], gamma=-1, nevents0=nevents0, nevents1=nevents1, 
-                                              nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1,H0=H0, H1=H1)
-          print(k)
+     theta.grid <- c(0, utimes)
+     ngrid <- length(theta.grid)
+     ell1 <- ellneg1 <- rep(0, ngrid)
+     for(k in 1:ngrid) {
+        ell1[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=1, d0=d0, d1=d1, 
+                                 n0 = n0, n1 = n1, utimes=utimes)$loglik.val
+        ellneg1[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=-1, d0=d0, d1=d1, 
+                                    n0 = n0, n1 = n1, utimes=utimes)$loglik.val
+        
+        ## record the value of the objective function here
+        #print(c(k, ell1[k], ellneg1[k]))
+        cat(k, " out of ", ngrid, " iterations \n")
      }
-     
-     opt.gam1 <- min(objfn.check1)
-     opt.gamneg1 <- min(objfn.checkneg1)
-     opt.theta1 <- theta.possible[which.min(objfn.check1)]
-     opt.thetaneg1 <- theta.possible[which.min(objfn.checkneg1)]
-     best.gamma <- ifelse(opt.gam1 < opt.gamneg1, 1, -1)
-     best.theta <- ifelse(best.gamma==1, opt.theta1, opt.thetaneg1)
-     
-   
+     ## Need to polish the solution somehow.
+    
+     best.gamma <- ifelse(min(ellneg1) < min(ell1), -1, 1)
+     if(best.gamma == -1) {
+         best.theta <- theta.grid[which.min(ellneg1)]
+     } else if(best.gamma == 1) {
+         best.theta <- theta.grid[which.min(ell1)]
+     }
+     ## If best.theta equals maximum value, just switch to 0
+     if(best.theta==max(theta.grid)) {
+         best.theta <- 0
+         best.gamma <- ifelse(best.gamma == 1, -1, 1)
+     }
   } else if(is.null(theta.fixed) & !is.null(gamma)) {
-      theta.interval <- c(min(c(utimes0, utimes1)), .95*max(c(utimes0, utimes1)) )
-      ## probably need to give more thought to the best choice for theta.interval
-      if(gamma==1) {
-           opt.gam1 <- optimize(f=ProfileLogLikSQP, interval=theta.interval, gamma=1, nevents0=nevents0, nevents1=nevents1, 
-                                nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1,
-                                H0=H0, H1=H1)
-           theta.star <- opt.gam1$minimum
-      } else if(gamma== - 1) {
-           opt.gamneg1 <- optimize(f=ProfileLogLikSQP, interval=theta.interval, gamma=-1, nevents0=nevents0, nevents1=nevents1, 
-                                  nrisk0=nrisk0, nrisk1=nrisk1, utimes0=utimes0, utimes1=utimes1,
-                                  H0=H0, H1=H1)
-           theta.star <- opt.gamneg1$minimum
+      theta.grid <- c(0, utimes)
+      ngrid <- length(theta.grid)
+      ell <- rep(0, ngrid)
+      for(k in 1:ngrid) {
+           ell[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=gamma, d0=d0, d1=d1, 
+                                     n0 = n0, n1 = n1, utimes=utimes)$loglik.val
+           ## record the value of the objective function here
+           cat(k, " out of ", ngrid, " iterations \n")
       }
+      ## Need to polish the solution somehow.
+    
+      best.theta <- theta.grid[which.min(ell)]
       best.gamma <- gamma
-      best.theta <- theta.star
+      if(best.theta==max(theta.grid)) {
+        best.theta <- 0
+        best.gamma <- ifelse(best.gamma == 1, -1, 1)
+      }
   } else if(!is.null(theta.fixed) & is.null(gamma)) {
-      theta.possible <- NULL
-      obj1 <- ProfileLogLikSQP(theta=theta.fixed, gamma = 1, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1, H0, H1) 
-      objneg1 <- ProfileLogLikSQP(theta=theta.fixed, gamma = -1, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1, H0, H1) 
+      obj1 <- SurvFnKnownTheta(theta=theta.fixed, gamma=1, d0=d0, d1=d1, n0=n0, n1=n1, utimes=utimes)$loglik.val
+      objneg1 <- SurvFnKnownTheta(theta=theta.fixed, gamma=-1, d0=d0, d1=d1, n0=n0, n1=n1, utimes=utimes)$loglik.val 
       
       best.gamma <- ifelse(obj1 < objneg1, 1, -1)
       best.theta <- theta.fixed
@@ -90,25 +113,15 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL) {
       best.gamma <- gamma
       objfn.check1 <- NULL
   }
-  #cat("best.theta", best.theta, "\n")
+  
   
   ## (4) 
-  ## Change this function so that it can take a fixed value of gamma as well.
-  tmp <- CumHazKnownTheta(best.theta, gamma=best.gamma, nevents0, nevents1, nrisk0, nrisk1, utimes0, utimes1,
-                          H0=H0, H1=H1)
-
-  if(is.null(objfn.check1)) {
-     objfn.check1 <- objfn.checkneg1 <- tmp$DistNA
-  }  
-  hazard0 <- tmp$hazard0
-  hazard1 <- tmp$hazard1
-  surv0 <- cumprod(1 - hazard0)
-  surv1 <- cumprod(1 - hazard1)
+  tmp <- SurvFnKnownTheta(theta=best.theta, gamma=best.gamma, d0=d0, 
+                          d1=d1, n0=n0, n1=n1, utimes=utimes) 
+  
   ## note that this answer excludes the last jump point
-  ans <- list(times0=tmp$utimes0, nevents0=tmp$nevents0, nrisk0=tmp$nrisk0, times1=tmp$utimes1, nevents1=tmp$nevents1,
-              nrisk1=tmp$nrisk1, hazard0=hazard0, hazard1=hazard1, surv0=surv0, surv1=surv1, theta=best.theta,
-              gamma=best.gamma, theta.possible=theta.possible, objfn.check1=objfn.check1, objfn.checkneg1=objfn.checkneg1,
-              H0=H0, H1=H1, DistNA=tmp$DistNA)
+  ans <- list(times=utimes, surv0=tmp$Surv0, surv1=tmp$Surv1, nevents0=d0, nrisk0=n0, nevents1=d1,
+              nrisk1=n1, theta=best.theta, gamma=best.gamma, discretized.times=new.times)
   class(ans) <- "surv.delay"
   return(ans)
 }

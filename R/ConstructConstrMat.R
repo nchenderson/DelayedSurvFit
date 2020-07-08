@@ -1,44 +1,35 @@
-ConstructConstrMat <- function(times0, times1, theta, gamma) {
+ConstructConstrMat <- function(utimes, theta, gamma) {
   ### Function for constructing the main constraint matrix C
-  #   we should have Cw \geq 0
+  #   we should have C * par \leq 0
   #   This is the constraint matrix under the assumption that
   #   the control arm initially "dominates" the active treatment arms 
-  
+  #ConstructConstrMat(utimes, theta, gamma)
   ## Assume that 0 <= \theta <= max event time
-  times.tot <- sort(c(times0, times1))
+  times.tot <- utimes
   
   tau <- length(times.tot)
-  A <- matrix(0, nrow=tau, ncol=length(times0))
-  B <- matrix(0, nrow=tau, ncol=length(times1))
-  if(min(times.tot) >= theta) {
+  tmp <- tmp2 <- matrix(0, nrow=tau, ncol=tau)
+  tmp[lower.tri(tmp, diag=TRUE)] <- 1
+  tmp2[lower.tri(tmp2, diag=TRUE)] <- 1
+  
+  if(min(times.tot) > theta) {
      ## all times are greater than theta
      Kstar <- 0
   } else {
      ## 
-     Kstar <- max(which(times.tot < theta))
+     Kstar <- max(which(times.tot <= theta))
   }
-  #Kstar <- ifelse(min(times.tot) > theta, 0, max(which(times.tot < theta)))
-  
+
   if(gamma==1) {
-     for(j in 1:tau) {
-        if(j <= Kstar) {
-           A[j,] <- ifelse(times0 <= times.tot[j], -1, 0)
-           B[j,] <- ifelse(times1 <= times.tot[j], 1, 0)
-        } else {
-           A[j,] <- ifelse(times0 <= times.tot[j], 1, 0)
-           B[j,] <- ifelse(times1 <= times.tot[j], -1, 0)
-        }
-     }
+     X1 <- rbind(matrix(1, nrow=Kstar, ncol=tau), matrix(-1, nrow=tau-Kstar, ncol=tau))
+     X2 <- rbind(matrix(-1, nrow=Kstar, ncol=tau), matrix(1, nrow=tau-Kstar, ncol=tau)) 
+     A <- tmp*X1
+     B <- tmp*X2
   } else if(gamma == -1) {
-     for(j in 1:tau) {
-       if(j <= Kstar) {
-          A[j,] <- ifelse(times0 <= times.tot[j], 1, 0)
-          B[j,] <- ifelse(times1 <= times.tot[j], -1, 0)
-       } else {
-          A[j,] <- ifelse(times0 <= times.tot[j], -1, 0)
-          B[j,] <- ifelse(times1 <= times.tot[j], 1, 0)
-       }
-     }
+     X1 <- rbind(matrix(-1, nrow=Kstar, ncol=tau), matrix(1, nrow=tau-Kstar, ncol=tau))
+     X2 <- rbind(matrix(1, nrow=Kstar, ncol=tau), matrix(-1, nrow=tau-Kstar, ncol=tau)) 
+     A <- tmp*X1
+     B <- tmp*X2
   }
   ans <- cbind(A, B)
   return(ans)
