@@ -1,14 +1,17 @@
-DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100) {
+DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100,
+                           inner.iter=50, final.iter=1000) {
   
+  options(nloptr.show.inequality.warning=FALSE)
   num.unique <- length(unique(times))
   if(num.unique > max.times) {
     
-      chc <- hclust(dist(times))
-      memb <- cutree(chc, k=max.times)
-      new.times <- rep(0, length(times))
-      for(k in 1:100) {
-         new.times[memb==k] <- median(times[memb==k])
-      }
+      #chc <- hclust(dist(times))
+      #memb <- cutree(chc, k=max.times)
+      #new.times <- rep(0, length(times))
+      #for(k in 1:100) {
+      #   new.times[memb==k] <- median(times[memb==k])
+      #}
+      new.times <- DiscretizeTimes(times, max.times=max.times)
   } else {
       new.times <- times
   }
@@ -55,6 +58,9 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max
   
   ## need to clean data further here.
   
+  nsqp1 <- inner.iter
+  nsqp2 <- final.iter
+  
   ## (3) Find optimal theta (if theta is not specified)
   if(is.null(theta.fixed) & is.null(gamma)) {
      theta.grid <- c(0, utimes)
@@ -62,9 +68,9 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max
      ell1 <- ellneg1 <- rep(0, ngrid)
      for(k in 1:ngrid) {
         ell1[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=1, d0=d0, d1=d1, 
-                                 n0 = n0, n1 = n1, utimes=utimes)$loglik.val
+                                 n0 = n0, n1 = n1, utimes=utimes, max.sqp.iter=nsqp1)$loglik.val
         ellneg1[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=-1, d0=d0, d1=d1, 
-                                    n0 = n0, n1 = n1, utimes=utimes)$loglik.val
+                                    n0 = n0, n1 = n1, utimes=utimes, max.sqp.iter=nsqp1)$loglik.val
         
         ## record the value of the objective function here
         #print(c(k, ell1[k], ellneg1[k]))
@@ -114,10 +120,9 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max
       objfn.check1 <- NULL
   }
   
-  
   ## (4) 
   tmp <- SurvFnKnownTheta(theta=best.theta, gamma=best.gamma, d0=d0, 
-                          d1=d1, n0=n0, n1=n1, utimes=utimes) 
+                          d1=d1, n0=n0, n1=n1, utimes=utimes, max.sqp.iter=nsqp2) 
   
   ## note that this answer excludes the last jump point
   ans <- list(times=utimes, surv0=tmp$Surv0, surv1=tmp$Surv1, nevents0=d0, nrisk0=n0, nevents1=d1,
