@@ -1,4 +1,4 @@
-SurvFnKnownTheta <- function(theta, gamma, d0, d1, n0, n1, utimes) {
+SurvFnKnownTheta <- function(theta, gamma, d0, d1, n0, n1, utimes, max.sqp.iter=100) {
   
     n.pars <- 2*length(utimes)
   
@@ -9,15 +9,29 @@ SurvFnKnownTheta <- function(theta, gamma, d0, d1, n0, n1, utimes) {
     qp.sol <- dykstra(Dmat=diag(rep(1, n.pars)), dvec=par.target, Amat=t(Amat))
     
    
-    #eps <- 1e-4
-    #qp.sol <- dykstra(Dmat=diag(rep(1, n.pars)), dvec=par.target, Amat=t(Amat), 
-    #                  bvec = rep(eps, nrow(Amat)))
-    ## might need to "polish" the solution here
-    loglik.val <- LogLik(qp.sol$solution, nevents0=d0, nevents1=d1, nrisk0=n0, nrisk1=n1) 
+    loglik.val.qp <- LogLik(qp.sol$solution, nevents0=d0, nevents1=d1, nrisk0=n0, nrisk1=n1) 
       
-    CS0 <- exp(cumsum(qp.sol$solution[1:(n.pars/2)]))
-    CS1 <- exp(cumsum(qp.sol$solution[(n.pars/2 + 1):n.pars]))
-    ans <- list(Surv0 = CS0, Surv1 = CS1, loglik.val=loglik.val)
+    Ashort <- (-1)*Cmat
+    locconstrfn <- function(x) {
+         #return(as.numeric(Amat%*%x))
+         return(as.numeric(Ashort%*%x))
+    }
+    locconstrfnder <- function(x) {
+         #return(Amat)
+         return(Ashort)
+    }
+    sqp.sol <- slsqp(x0=qp.sol$solution, fn=LogLik, gr = LogLikDer, upper = rep(0, n.pars), hin = locconstrfn,
+                 hinjac = locconstrfnder, control = list(maxeval=max.sqp.iter), nevents0=d0, nevents1=d1, nrisk0=n0, nrisk1=n1)
+    loglik.val.sqp <- LogLik(sqp.sol$par, nevents0=d0, nevents1=d1, nrisk0=n0, nrisk1=n1) 
+    
+    if(loglik.val.qp <= loglik.val.sqp) {
+       CS0 <- exp(cumsum(qp.sol$solution[1:(n.pars/2)]))
+       CS1 <- exp(cumsum(qp.sol$solution[(n.pars/2 + 1):n.pars]))
+    } else if(loglik.val.qp > loglik.val.sqp) {
+       CS0 <- exp(cumsum(sqp.sol$par[1:(n.pars/2)]))
+       CS1 <- exp(cumsum(sqp.sol$par[(n.pars/2 + 1):n.pars]))
+    }    
+    ans <- list(Surv0 = CS0, Surv1 = CS1, loglik.val=loglik.val.qp)
     return(ans)
 }
     
