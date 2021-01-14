@@ -27,11 +27,17 @@ SurvFnKnownTheta <- function(theta, gamma, d0, d1, n0, n1, utimes, max.sqp.iter=
     if(loglik.val.qp <= loglik.val.sqp) {
        CS0 <- exp(cumsum(qp.sol$solution[1:(n.pars/2)]))
        CS1 <- exp(cumsum(qp.sol$solution[(n.pars/2 + 1):n.pars]))
+       
+       haz0 <- 1 - exp(qp.sol$solution[1:(n.pars/2)])
+       haz1 <- 1 - exp(qp.sol$solution[(n.pars/2 + 1):n.pars])
     } else if(loglik.val.qp > loglik.val.sqp) {
        CS0 <- exp(cumsum(sqp.sol$par[1:(n.pars/2)]))
        CS1 <- exp(cumsum(sqp.sol$par[(n.pars/2 + 1):n.pars]))
+       
+       haz0 <- 1 - exp(sqp.sol$par[1:(n.pars/2)])
+       haz1 <- 1 - exp(sqp.sol$par[(n.pars/2 + 1):n.pars])
     }    
-    ans <- list(Surv0 = CS0, Surv1 = CS1, loglik.val=loglik.val.qp)
+    ans <- list(Surv0 = CS0, Surv1 = CS1, haz0=haz0, haz1=haz1, loglik.val=loglik.val.qp)
     return(ans)
 }
     
