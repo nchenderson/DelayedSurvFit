@@ -1,5 +1,6 @@
-export(DelayedSurvFit, DelayedHazard, ProfileLogLikCO, LogEL, ProfileLogLikSQP, FindActiveSet, CumHazKnownTheta, ConstructConstrMat,
-       rmst, SurvFn, rrml, SurvFnKnownTheta, WeightedKMStat, PermutationTest)
+export(DelayedSurvFit, rmst, SurvFn, rrml, DelayedHazFit, AvgHazardRatios)
+importFrom("graphics", "abline", "legend", "lines", "plot")
+importFrom("stats", "cutree", "dist", "hclust", "median", "pnorm", "stepfun")
 importFrom("survival", "Surv", "survfit")
 importFrom("Dykstra", "dykstra")
 importFrom("nloptr", "slsqp")
