@@ -8,9 +8,9 @@ Fitting Survival Curves with Potential Crossings
 aa
 }
 \usage{
-DelayedSurvFit(times, events, trt, gamma, theta.fixed=NULL)
+DelayedSurvFit(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100,
+               inner.iter=50, final.iter=1000, verbose=TRUE)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{times}{
 vector of follow-up times
@@ -26,6 +26,18 @@ value of the gamma parameter
 }
 \item{theta.fixed}{
 optional fixed value of theta. Estimated if not provided.
+}
+\item{max.times}{
+tbf
+}
+\item{inner.iter}{
+tbf
+}
+\item{final.iter}{
+tbf
+}
+\item{verbose}{
+tbf
 }
 }
 \details{
@@ -82,7 +94,5 @@ lines(dsf.obj$times, km1, type="s", lty=2, col="red")
 
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ survival }% use one of  RShowDoc("KEYWORDS")
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ survival }
+\keyword{ nonparametric }

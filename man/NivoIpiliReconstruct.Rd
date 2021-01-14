@@ -1,5 +1,5 @@
-\name{NivoIpiliReconstruct}
-\alias{NivoIpiliReconstruct}
+\name{NivoIpili}
+\alias{NivoIpili}
 \docType{data}
 \title{
 Approximate survival data for Nivolumab plus Ipilimumab
@@ -9,7 +9,7 @@ Reconstructed survival data from a study involving
 the comparison of Nivolumab plus Ipilimumab vs. chemotherapy
 in the treatment of patients having advanced non–small-cell lung cancer.
 }
-\usage{data("NivoIpiliReconstruct")}
+\usage{data("NivoIpili")}
 \format{
   A data frame with 1166 observations on the following 3 variables.
   \describe{
@@ -29,7 +29,7 @@ Hellmann, Matthew D., et al. (2019). "Nivolumab plus Ipilimumab in Advanced Non�
 Hellmann, Matthew D., et al. (2019). "Nivolumab plus Ipilimumab in Advanced Non–Small-Cell Lung Cancer." New England Journal of Medicine.
 }
 \examples{
-data(NivoIpiliReconstruct)
+data(NivoIpili)
 head(NivoIpili) 
 }
 \keyword{datasets}
