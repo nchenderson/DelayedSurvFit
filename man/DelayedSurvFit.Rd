@@ -1,11 +1,12 @@
 \name{DelayedSurvFit}
 \alias{DelayedSurvFit}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Fitting Survival Curves with Potential Crossings
+Survival functions with single-crossing constraints
 }
 \description{
-aa
+This computes nonparametric estimates of the survival curves
+in two treatment arms under the constraint that the two survival curves can cross
+at most one time.
 }
 \usage{
 DelayedSurvFit(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100,
