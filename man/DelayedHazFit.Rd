@@ -47,7 +47,7 @@ tbf
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-an object of class surv.delay
+an object of class "surv.delay"
 %%  ~Describe the value returned
 %%  If it is a LIST, use
 %%  \item{comp1 }{Description of 'comp1'}
