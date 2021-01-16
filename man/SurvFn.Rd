@@ -11,7 +11,6 @@ for either the control arm or active treatment arm.
 \usage{
 SurvFn(obj, arm = 1)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{obj}{
 An object of class \code{surv.delay}
@@ -35,14 +34,12 @@ Nicholas Henderson
 \note{
 %%  ~~further notes~~
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
 \seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
 ### Generate simulated survival data
+\dontrun{
 n <- 400
 cens.time <- 8
 X1 <- rweibull(n, shape=2.3, scale=7)
@@ -66,6 +63,7 @@ S1(2) - S0(2)
 
 ## Difference in survival function at time 5
 S1(5) - S0(5)
+}
 }
 \keyword{ survival }
 \keyword{ nonparametric }
