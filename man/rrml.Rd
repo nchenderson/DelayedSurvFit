@@ -50,6 +50,7 @@ Nicholas Henderson
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+\dontrun{
 ### Generate simulated survival data
 n <- 400
 cens.time <- 8
@@ -66,6 +67,7 @@ trt <- rep(c(0,1), each=n)  ## treatment arm assignment
 
 dfs.obj <- DelayedSurvFit(times, events, trt, max.times=50) 
 rrml(dfs.obj, t0=3, t1=3)
+}
 }
 \keyword{ survival }
 \keyword{ robust }
