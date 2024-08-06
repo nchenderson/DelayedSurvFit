@@ -1,14 +1,15 @@
 \name{DelayedSurvFit}
 \alias{DelayedSurvFit}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Fitting Survival Curves with Potential Crossings
+Survival functions with single-crossing constraints
 }
 \description{
-aa
+This computes nonparametric estimates of the survival curves
+in two treatment arms under the constraint that the two survival curves can cross
+at most one time.
 }
 \usage{
-DelayedSurvFit(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100,
+DelayedSurvFit(times, events, trt, gamma.fixed=NULL, theta.fixed=NULL, max.times=100,
                inner.iter=50, final.iter=1000, verbose=TRUE)
 }
 \arguments{
@@ -16,40 +17,50 @@ DelayedSurvFit(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100,
 vector of follow-up times
 }
 \item{events}{
-vector of event indicators
+vector of event indicators: 1 for observed events, 0 for censored observations
 }
 \item{trt}{
-vector of treatment arm assignment
+vector of treatment arm assignment: 1 for active treatment arm, 0 for control arm
 }
-\item{gamma}{
-value of the gamma parameter
+\item{gamma.fixed}{
+optional fixed value of the superior long-term survival parameter: gamma.fixed = 1 means the active treatment arm has better long-term survival while gamma.fixed = -1 means the control arm has better long-term survival. This is estimated if not provided by the user. 
 }
 \item{theta.fixed}{
-optional fixed value of theta. Estimated if not provided.
+optional fixed value of theta. This is estimated if not provided by the user.
 }
 \item{max.times}{
-tbf
+The maximum number of bins to use for discretization of the follow-up times.
 }
 \item{inner.iter}{
-tbf
+The number of iterations used to find the 
 }
 \item{final.iter}{
-tbf
+
 }
 \item{verbose}{
-tbf
+If \code{TRUE}, progress of the algorithm is printed to the screen.
 }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-an object of class surv.delay
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+an object of class \code{surv.delay}
+
+This is a list withthe following components
+  \item{times}{Vector of length m which has the unique, sorted follow-times after discretization.  }
+  \item{surv0}{Vector of length m which has control arm survival probabilities at each of the time points in the vector \code{times}}
+  \item{surv1}{Vector of survival probabilities in active treatment arm}
+  \item{haz0}{Vector of discrete hazards in control arm}
+  \item{haz1}{Vector of discrete hazards in active treatment arm}
+  \item{nevents0}{Vector of number of events in control arm}
+  \item{nrisk0}{Vector of the number at risk in control arm}
+  \item{nevents1}{Vector of number of events in active treatment arm}
+  \item{nrisk1}{Vector of the number at risk in active treatment arm}
+  \item{theta}{Estimated value of the survival curve crossing time}
+  \item{gamma}{Estimated value of which arm has superior long-term survival}
+  \item{discretized.times}{Vector of discretized follow-up times used in the computation}
+  \item{negloglik.val}{Value of the negative log-likelihood at convergence}
 }
 \references{
 %% ~put references to the literature/web site here ~
@@ -60,8 +71,6 @@ Nicholas Henderson
 \note{
 %%  ~~further notes~~
 }
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~
@@ -83,12 +92,16 @@ times <- c(Y1, Y2)  ## follow-up times
 events <- c(e1, e2) ## event indicators
 trt <- rep(c(0,1), each=n)  ## treatment arm assignment
 
-dsf.obj <- DelayedSurvFit(times, events, trt, gamma=-1, theta.fixed=5.8, max.times=100) 
+## Run the single-crossing constrained estimation procedure with a fixed value of
+## gamma = -1 and theta = 5.8
+dsf.obj <- DelayedSurvFit(times, events, trt, gamma.fixed=-1, 
+                          theta.fixed=5.8, max.times=100) 
 
 km0 <- cumprod(1 - dsf.obj$nevents0/dsf.obj$nrisk0)
 km1 <- cumprod(1 - dsf.obj$nevents1/dsf.obj$nrisk1)
 
-plot(dsf.obj)
+## Plot the single-crossing constrained estimate with the KM estimate:
+plot(dsf.obj, xlab="time", ylab="survival probability")
 lines(dsf.obj$times, km0, type="s", lty=2)
 lines(dsf.obj$times, km1, type="s", lty=2, col="red")
 
