@@ -86,9 +86,11 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max
       ngrid <- length(theta.grid)
       ell <- rep(0, ngrid)
       for(k in 1:ngrid) {
-           ell[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=gamma, d0=d0, d1=d1, 
-                                     n0 = n0, n1 = n1, utimes=utimes)$loglik.val
+          # ell[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=gamma, d0=d0, d1=d1, 
+           #                          n0 = n0, n1 = n1, utimes=utimes)$loglik.val
            
+           ell[k] <- SurvFnKnownTheta(theta = theta.grid[k], gamma=gamma, d0=d0, d1=d1, 
+                                      n0 = n0, n1 = n1, utimes=utimes)$loglik.val
            if(verbose) {
                cat(k, " out of ", ngrid, " iterations \n")
            }
@@ -99,7 +101,7 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max
       best.gamma <- gamma
       if(best.theta==max(theta.grid)) {
         best.theta <- 0
-        best.gamma <- ifelse(best.gamma == 1, -1, 1)
+        #best.gamma <- ifelse(best.gamma == 1, -1, 1)
       }
   } else if(!is.null(theta.fixed) & is.null(gamma)) {
       obj1 <- SurvFnKnownTheta(theta=theta.fixed, gamma=1, d0=d0, d1=d1, n0=n0, n1=n1, utimes=utimes)$loglik.val
@@ -121,7 +123,7 @@ DelayedSurvFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max
   ## note that this answer excludes the last jump point
   ans <- list(times=utimes, surv0=tmp$Surv0, surv1=tmp$Surv1, haz0=tmp$haz0, haz1=tmp$haz1,
               nevents0=d0, nrisk0=n0, nevents1=d1, nrisk1=n1, theta=best.theta, gamma=best.gamma, 
-              discretized.times=new.times)
+              discretized.times=new.times, negloglik.val=tmp$loglik.val)
   class(ans) <- "surv.delay"
   return(ans)
 }

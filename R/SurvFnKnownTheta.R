@@ -7,7 +7,6 @@ SurvFnKnownTheta <- function(theta, gamma, d0, d1, n0, n1, utimes, max.sqp.iter=
     par.target <- c(log(n0 - d0) - log(n0), log(n1 - d1) - log(n1))
 
     qp.sol <- dykstra(Dmat=diag(rep(1, n.pars)), dvec=par.target, Amat=t(Amat))
-    
    
     loglik.val.qp <- LogLik(qp.sol$solution, nevents0=d0, nevents1=d1, nrisk0=n0, nrisk1=n1) 
       
