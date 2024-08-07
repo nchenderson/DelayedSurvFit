@@ -10,49 +10,59 @@ the constraint that the two hazard functions can cross
 at most one time.
 }
 \usage{
-DelayedHazFit(times, events, trt, gamma = NULL, theta.fixed = NULL, 
+DelayedHazFit(times, events, trt, gamma.fixed = NULL, theta.fixed = NULL, 
 max.times = 100, inner.iter = 50, final.iter = 1000, verbose = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{times}{
+   \item{times}{
 vector of follow-up times
 }
 \item{events}{
-vector of event indicators
+vector of event indicators: 1 for observed events, 0 for censored observations
 }
 \item{trt}{
-vector of treatment arm assignment
+vector of treatment arm assignment: 1 for active treatment arm, 0 for control arm
 }
-\item{gamma}{
-value of the gamma parameter
+\item{gamma.fixed}{
+optional fixed value of the superior long-term survival parameter: gamma.fixed = 1 means the active treatment arm has better long-term survival while gamma.fixed = -1 means the control arm has better long-term survival. This is estimated if not provided by the user. 
 }
 \item{theta.fixed}{
-optional fixed value of theta. Estimated if not provided.
+optional fixed value of theta. This is estimated if not provided by the user.
 }
 \item{max.times}{
-tbf
+The maximum number of bins to use for discretization of the follow-up times.
 }
 \item{inner.iter}{
-tbf
+The number of iterations used to find the crossing time parameters.
 }
 \item{final.iter}{
-tbf
+Given estimated crossing time parameter estimates, number of iterations used to find survival probabilities.
 }
 \item{verbose}{
-tbf
+If \code{TRUE}, progress of the algorithm is printed to the screen.
 }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-an object of class "surv.delay"
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+an object of class \code{surv.delay}
+
+This is a list withthe following components
+  \item{times}{Vector of length m which has the unique, sorted follow-times after discretization.  }
+  \item{surv0}{Vector of length m which contains estimated control arm survival probabilities at each of the time points in the vector \code{times}}
+  \item{surv1}{Vector of length m which contains estimated active treatment arm survival probabilities at each of the time points in the vector \code{times}}
+  \item{haz0}{Vector of length m which contains estimated control arm hazards at each of the time points in the vector \code{times}}
+  \item{haz1}{Vector of length m which contains estimated active treatment arm hazards at each of the time points in the vector \code{times}}
+  \item{nevents0}{Vector of length m which contains estimated control arm survival probabilities at each of the time points in the vector \code{times}}
+  \item{nrisk0}{Vector of the number at risk in control arm}
+  \item{nevents1}{Vector of number of events in active treatment arm}
+  \item{nrisk1}{Vector of the number at risk in active treatment arm}
+  \item{theta}{Estimated value of the survival curve crossing time}
+  \item{gamma}{Estimated value of which arm has superior long-term survival}
+  \item{discretized.times}{Vector of discretized follow-up times used in the computation}
+  \item{negloglik.val}{Value of the negative log-likelihood at convergence}
 }
 \references{
 %% ~put references to the literature/web site here ~
