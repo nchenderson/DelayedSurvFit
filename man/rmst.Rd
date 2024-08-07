@@ -10,23 +10,17 @@ Computes the restricted mean survival time for both treatment arms.
 rmst(obj, tau0 = NULL, tau1 = NULL)
 }
 \arguments{
-  \item{obj}{
-An object of class \code{surv.delay}
-}
-  \item{tau0}{
-Truncation time for control arm
-}
-  \item{tau1}{
-Truncation time for active treatment arm
-}
+  \item{obj}{An object of class \code{surv.delay}}
+  \item{tau0}{Truncation time for control arm}
+  \item{tau1}{Truncation time for active treatment arm}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
 A list with the following two components
-  \item{rmst0}{The restricted mean survival time in the control arm}
-  \item{rmst1}{The restricted mean survival time in the active treatment arm}
+  \item{rmst0}{The estimated restricted mean survival time in the control arm}
+  \item{rmst1}{The estimated restricted mean survival time in the active treatment arm}
 }
 \references{
 %% ~put references to the literature/web site here ~
