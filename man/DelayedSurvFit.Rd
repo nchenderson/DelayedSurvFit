@@ -9,8 +9,8 @@ in two treatment arms under the constraint that the two survival curves can cros
 at most one time.
 }
 \usage{
-DelayedSurvFit(times, events, trt, gamma.fixed=NULL, theta.fixed=NULL, max.times=100,
-               inner.iter=50, final.iter=1000, verbose=TRUE)
+DelayedSurvFit(times, events, trt, gamma.fixed=NULL, theta.fixed=NULL, 
+               max.times=100, inner.iter=50, final.iter=1000, verbose=TRUE)
 }
 \arguments{
   \item{times}{
@@ -32,10 +32,10 @@ optional fixed value of theta. This is estimated if not provided by the user.
 The maximum number of bins to use for discretization of the follow-up times.
 }
 \item{inner.iter}{
-The number of iterations used to find the 
+The number of iterations used to find the crossing time parameters.
 }
 \item{final.iter}{
-
+Given estimated crossing time parameter estimates, number of iterations used to find survival probabilities.
 }
 \item{verbose}{
 If \code{TRUE}, progress of the algorithm is printed to the screen.
@@ -49,11 +49,11 @@ an object of class \code{surv.delay}
 
 This is a list withthe following components
   \item{times}{Vector of length m which has the unique, sorted follow-times after discretization.  }
-  \item{surv0}{Vector of length m which has control arm survival probabilities at each of the time points in the vector \code{times}}
-  \item{surv1}{Vector of survival probabilities in active treatment arm}
-  \item{haz0}{Vector of discrete hazards in control arm}
-  \item{haz1}{Vector of discrete hazards in active treatment arm}
-  \item{nevents0}{Vector of number of events in control arm}
+  \item{surv0}{Vector of length m which contains estimated control arm survival probabilities at each of the time points in the vector \code{times}}
+  \item{surv1}{Vector of length m which contains estimated active treatment arm survival probabilities at each of the time points in the vector \code{times}}
+  \item{haz0}{Vector of length m which contains estimated control arm hazards at each of the time points in the vector \code{times}}
+  \item{haz1}{Vector of length m which contains estimated active treatment arm hazards at each of the time points in the vector \code{times}}
+  \item{nevents0}{Vector of length m which contains estimated control arm survival probabilities at each of the time points in the vector \code{times}}
   \item{nrisk0}{Vector of the number at risk in control arm}
   \item{nevents1}{Vector of number of events in active treatment arm}
   \item{nrisk1}{Vector of the number at risk in active treatment arm}
@@ -92,8 +92,8 @@ times <- c(Y1, Y2)  ## follow-up times
 events <- c(e1, e2) ## event indicators
 trt <- rep(c(0,1), each=n)  ## treatment arm assignment
 
-## Run the single-crossing constrained estimation procedure with a fixed value of
-## gamma = -1 and theta = 5.8
+## Run the single-crossing constrained estimation procedure with a fixed 
+## value of gamma = -1 and theta = 5.8
 dsf.obj <- DelayedSurvFit(times, events, trt, gamma.fixed=-1, 
                           theta.fixed=5.8, max.times=100) 
 
