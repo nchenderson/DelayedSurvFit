@@ -1,4 +1,4 @@
-DelayedHazFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max.times=100,
+DelayedHazFit <- function(times, events, trt, gamma.fixed=NULL, theta.fixed=NULL, max.times=100,
                            inner.iter=50, final.iter=1000, verbose=TRUE) {
   
   options(nloptr.show.inequality.warning=FALSE)
@@ -55,7 +55,7 @@ DelayedHazFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max.
   nsqp2 <- final.iter
   
   ## (3) Find optimal theta (if theta is not specified)
-  if(is.null(theta.fixed) & is.null(gamma)) {
+  if(is.null(theta.fixed) & is.null(gamma.fixed)) {
     theta.grid <- c(0, utimes)
     ngrid <- length(theta.grid)
     ell1 <- ellneg1 <- rep(0, ngrid)
@@ -82,12 +82,12 @@ DelayedHazFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max.
       best.theta <- 0
       best.gamma <- ifelse(best.gamma == 1, -1, 1)
     }
-  } else if(is.null(theta.fixed) & !is.null(gamma)) {
+  } else if(is.null(theta.fixed) & !is.null(gamma.fixed)) {
     theta.grid <- c(0, utimes)
     ngrid <- length(theta.grid)
     ell <- rep(0, ngrid)
     for(k in 1:ngrid) {
-      ell[k] <- SurvFnKnownTheta_Haz(theta = theta.grid[k], gamma=gamma, d0=d0, d1=d1, 
+      ell[k] <- SurvFnKnownTheta_Haz(theta = theta.grid[k], gamma=gamma.fixed, d0=d0, d1=d1, 
                                  n0 = n0, n1 = n1, utimes=utimes)$loglik.val
       if(verbose) {
         cat(k, " out of ", ngrid, " iterations \n")
@@ -101,16 +101,16 @@ DelayedHazFit <- function(times, events, trt, gamma=NULL, theta.fixed=NULL, max.
       best.theta <- 0
       best.gamma <- ifelse(best.gamma == 1, -1, 1)
     }
-  } else if(!is.null(theta.fixed) & is.null(gamma)) {
+  } else if(!is.null(theta.fixed) & is.null(gamma.fixed)) {
     obj1 <- SurvFnKnownTheta_Haz(theta=theta.fixed, gamma=1, d0=d0, d1=d1, n0=n0, n1=n1, utimes=utimes)$loglik.val
     objneg1 <- SurvFnKnownTheta_Haz(theta=theta.fixed, gamma=-1, d0=d0, d1=d1, n0=n0, n1=n1, utimes=utimes)$loglik.val 
     
     best.gamma <- ifelse(obj1 < objneg1, 1, -1)
     best.theta <- theta.fixed
-  } else if(!is.null(theta.fixed) & !is.null(gamma)) {
+  } else if(!is.null(theta.fixed) & !is.null(gamma.fixed)) {
     theta.possible <- NULL
     best.theta <- theta.fixed
-    best.gamma <- gamma
+    best.gamma <- gamma.fixed
     objfn.check1 <- NULL
   }
   
