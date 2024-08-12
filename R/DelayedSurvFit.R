@@ -28,6 +28,12 @@ DelayedSurvFit <- function(times, events, trt, gamma.fixed=NULL, theta.fixed=NUL
   } else {
       ## define weighted versions of dj and Rj
       tauu <- length(utimes)
+      if(sum(weights < 0, na.rm=TRUE) > 0) {
+          stop("Weights must be nonegative")
+      }
+      if(sum(is.na(weights)) > 0) {
+          stop("Weights cannot contain missing values")
+      }
       ww0 <- weights[trt==0]
       ww1 <- weights[trt==1]
       n0 <- n1 <- d0 <- d1 <- rep(0, tauu)
