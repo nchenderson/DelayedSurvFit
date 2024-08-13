@@ -17,5 +17,5 @@ plot.surv.delay <- function(x, ..., type="surv") {
             bty='n')
      ans <- data.frame(x=rep(x$times, 2), y=c(x$haz0, x$haz1), trt=rep(c(0,1), each=length(x$times)))
   }
-  return(ans)
+  invisible(ans)
 }
