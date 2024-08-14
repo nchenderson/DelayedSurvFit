@@ -11,7 +11,8 @@ at most one time.
 }
 \usage{
 DelayedHazFit(times, events, trt, gamma.fixed = NULL, theta.fixed = NULL, 
-max.times = 100, inner.iter = 50, final.iter = 1000, verbose = TRUE)
+              weights=NULL, max.times = 100, inner.iter = 50, final.iter = 1000, 
+              verbose = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,6 +30,9 @@ optional fixed value of the superior long-term survival parameter: gamma.fixed =
 }
 \item{theta.fixed}{
 optional fixed value of theta. This is estimated if not provided by the user.
+}
+\item{weights}{
+optional vector of individual-level weights. This should be a vector with the same length as \code{times}.
 }
 \item{max.times}{
 The maximum number of bins to use for discretization of the follow-up times.
