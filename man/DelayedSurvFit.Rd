@@ -109,7 +109,15 @@ plot(dsf.obj, xlab="time", ylab="survival probability")
 lines(dsf.obj$times, km0, type="s", lty=2)
 lines(dsf.obj$times, km1, type="s", lty=2, col="red")
 
+\dontrun{
+## Try running DelayedSurvFit on the NivoIpili without fixing
+## theta and gamma in advance
 
+data(NivoIpili)
+dsf.nivo <- DelayedSurvFit(times=NivoIpili$times, events=NivoIpili$evnt, 
+                           trt=NivoIpili$trt) 
+plot(dsf.nivo, xlab="Time", ylab="Survival", ylim=c(0, 1), las=1)
+}
 }
 \keyword{ survival }
 \keyword{ nonparametric }
