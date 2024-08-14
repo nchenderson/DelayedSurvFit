@@ -1,5 +1,5 @@
-DelayedHazFit <- function(times, events, trt, gamma.fixed=NULL, theta.fixed=NULL, max.times=100,
-                           inner.iter=50, final.iter=1000, verbose=TRUE) {
+DelayedHazFit <- function(times, events, trt, gamma.fixed=NULL, theta.fixed=NULL, weights=NULL,
+                          max.times=100, inner.iter=50, final.iter=1000, verbose=TRUE) {
   
   options(nloptr.show.inequality.warning=FALSE)
   num.unique <- length(unique(times))
@@ -11,19 +11,56 @@ DelayedHazFit <- function(times, events, trt, gamma.fixed=NULL, theta.fixed=NULL
   sfit <- survfit(Surv(new.times, events) ~ trt)
   
   utimes <- unique(sort(new.times))
-  risk.data <- data.frame(strata = summary(sfit, times = utimes, extend = TRUE)$strata, 
-                          time = summary(sfit, times = utimes, extend = TRUE)$time, 
-                          n.risk = summary(sfit, times = utimes, extend = TRUE)$n.risk,
-                          n.event = summary(sfit, times = utimes, extend = TRUE)$n.event,
-                          surv = summary(sfit, times=utimes, extend=TRUE)$surv)
+  ## Now, compute number of events and number at risk for each treatment arm:
+  if(is.null(weights)) {
+      risk.data <- data.frame(strata = summary(sfit, times = utimes, extend = TRUE)$strata, 
+                              time = summary(sfit, times = utimes, extend = TRUE)$time, 
+                              n.risk = summary(sfit, times = utimes, extend = TRUE)$n.risk,
+                              n.event = summary(sfit, times = utimes, extend = TRUE)$n.event,
+                              surv = summary(sfit, times=utimes, extend=TRUE)$surv)
   
-  n1 <- risk.data$n.risk[risk.data$strata=="trt=1"]
-  d1 <- risk.data$n.event[risk.data$strata=="trt=1"]
-  S1 <- risk.data$surv[risk.data$strata=="trt=1"]
-  n0 <- risk.data$n.risk[risk.data$strata=="trt=0"]
-  d0 <- risk.data$n.event[risk.data$strata=="trt=0"]
-  S0 <- risk.data$surv[risk.data$strata=="trt=0"]
+      n1 <- risk.data$n.risk[risk.data$strata=="trt=1"]
+      d1 <- risk.data$n.event[risk.data$strata=="trt=1"]
+      S1 <- risk.data$surv[risk.data$strata=="trt=1"]
+      n0 <- risk.data$n.risk[risk.data$strata=="trt=0"]
+      d0 <- risk.data$n.event[risk.data$strata=="trt=0"]
+      S0 <- risk.data$surv[risk.data$strata=="trt=0"]
+  } else {
+      ## define weighted versions of dj and Rj
+      tauu <- length(utimes)
+      if(sum(weights < 0, na.rm=TRUE) > 0) {
+          stop("Weights must be nonegative")
+      }
+      if(sum(is.na(weights)) > 0) {
+          stop("Weights cannot contain missing values")
+      }
+      ww0 <- weights[trt==0]
+      ww1 <- weights[trt==1]
+      n0 <- n1 <- d0 <- d1 <- rep(0, tauu)
+      U0 <- new.times[trt==0]
+      U1 <- new.times[trt==1]
+      Uobserved0 <- events[trt==0]*U0
+      Uobserved1 <- events[trt==1]*U1
   
+       for(k in 1:tauu) {
+          nn0_tmp <- sum(U0 >= utimes[k])
+          mm0_tmp <- sum(U0 == utimes[k])
+          nn1_tmp <- sum(U1 >= utimes[k])
+          mm1_tmp <- sum(U1 == utimes[k])
+          if(mm0_tmp > 0) {
+               n0[k] <- (sum(ww0[U0==utimes[k]])*nn0_tmp)/mm0_tmp
+          } else {
+               n0[k] <- nn0_tmp
+          }
+          if(mm1_tmp > 0) {
+               n1[k] <- (sum(ww1[U1==utimes[k]])*nn1_tmp)/mm1_tmp
+          } else {
+               n1[k] <- nn1_tmp
+          }
+          d0[k] <- sum(ww0*(Uobserved0 == utimes[k]))
+          d1[k] <- sum(ww1*(Uobserved1 == utimes[k]))
+        }
+  }
   #max.index <- min(max(n0 > 0), max(n1 > 0))
   num.zeros0 <- sum(n0 - d0 == 0) 
   num.zeros1 <- sum(n1 - d1 == 0)
